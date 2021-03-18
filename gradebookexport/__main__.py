@@ -1,16 +1,19 @@
+import csv
+
+import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 
 import dropfile
-from xlclass import Xlsx
 
 
-class Grades(Xlsx):
+class Grades:
 
     def __init__(self):
-        super().__init__()
+        self.wb = openpyxl.Workbook()
+        self.ws = self.wb.active
 
-    def set_column_width(self, column_width=15):
+    def set_column_width(self, column_width=10):
         """
         Adjust all columns to the same specified width.
         """
@@ -32,11 +35,31 @@ class Grades(Xlsx):
                         if 'Ungraded' in cell.value:
                             xl.ws.delete_cols(cell.column, 1)
 
+    def copy_csv_data(self, incsv):
+        """
+        Copy all values from csv file to target Excel Worksheet.
+
+        Args:
+            incsv (pathlib.Path): Path object representing a csv file.
+        """
+        try:
+            with open(incsv, 'r') as f:
+                reader = csv.reader(f)
+                [self.ws.append(row) for row in reader]
+
+        except Exception as e:
+            print(f"\nError - copy_csv_data: {e}")
+            input("[ENTER] to continue...")
+
 
 if __name__ == '__main__':
-    _csv = dropfile.get()
-    xl = Grades()
-    xl.copy_csv_data(_csv)
-    xl.set_column_width()
-    xl.remove_ungraded_columns()
-    xl.save(f'{_csv.parent}/{_csv.stem}.xlsx')
+    while True:
+        print('\n Drag "gradebook-export.csv" to this window and press ENTER.')
+        _csv = dropfile.get()
+        xl = Grades()
+        xl.copy_csv_data(_csv)
+        xl.set_column_width()
+        xl.remove_ungraded_columns()
+        print(f'\n "{_csv.stem}.xlsx" will be saved to the same folder.')
+        xl.wb.save(f'{_csv.parent}/{_csv.stem}.xlsx')
+        input('\n Press ENTER to work on the next file...')
